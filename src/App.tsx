@@ -41,6 +41,7 @@ export function App() {
         <Routes location={location} key={location.pathname}>
           <Route path="/" element={<HomeView />} />
           <Route path="/catalogo" element={<CatalogView />} />
+          <Route path="/pide-tu-planta" element={<PlantRequestView />} />
           <Route path="/productos/:productId" element={<ProductDetailView />} />
           <Route path="/checkout" element={<CheckoutView />} />
         </Routes>
@@ -489,6 +490,7 @@ function Header() {
       <nav aria-label="Navegacion principal">
         <Link to="/">Inicio</Link>
         <Link to="/catalogo">Catalogo</Link>
+        <Link to="/pide-tu-planta">Pide tu planta</Link>
       </nav>
 
       <motion.a
@@ -705,10 +707,10 @@ function CheckoutView() {
       "",
       `Total: ${formatCurrency(subtotal)}`,
       "",
-      `Nombre: ${customerName.trim()}`,
-      `Telefono: ${customerPhone.trim()}`,
-      `Delivery: ${needsDelivery ? "Si" : "No"}`,
-      needsDelivery ? `Direccion: ${deliveryAddress.trim()}` : "",
+      `*Nombre:* ${customerName.trim()}`,
+      `*Telefono:* ${customerPhone.trim()}`,
+      `*Delivery:* ${needsDelivery ? "Si" : "No"}`,
+      needsDelivery ? `*Direccion:* ${deliveryAddress.trim()}` : "",
     ]
       .filter(Boolean)
       .join("\n");
@@ -834,6 +836,114 @@ function CheckoutView() {
             </>
           )}
         </aside>
+      </section>
+    </motion.main>
+  );
+}
+
+function PlantRequestView() {
+  const [plantName, setPlantName] = useState("");
+  const [customerName, setCustomerName] = useState("");
+  const [contact, setContact] = useState("");
+  const [comment, setComment] = useState("");
+  const [formError, setFormError] = useState("");
+  const storePhone = import.meta.env.VITE_STORE_WHATSAPP_PHONE?.replace(/\D/g, "") ?? "";
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!plantName.trim() || !customerName.trim() || !contact.trim()) {
+      setFormError("Planta, nombre y contacto son obligatorios.");
+      return;
+    }
+
+    const message = [
+      "Hola Terra Magic, quiero sugerir una planta:",
+      "",
+      `*Planta:* ${plantName.trim()}`,
+      `*Nombre:* ${customerName.trim()}`,
+      `*Contacto:* ${contact.trim()}`,
+      comment.trim() ? `*Comentario:* ${comment.trim()}` : "",
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    const whatsappUrl = storePhone
+      ? `https://wa.me/${storePhone}?text=${encodeURIComponent(message)}`
+      : `https://wa.me/?text=${encodeURIComponent(message)}`;
+
+    window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+    setFormError("");
+  };
+
+  return (
+    <motion.main
+      animate={{ opacity: 1, y: 0 }}
+      className="request-main"
+      exit={{ opacity: 0, y: 12 }}
+      initial={{ opacity: 0, y: 16 }}
+      transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
+    >
+      <section className="request-layout" aria-labelledby="request-title">
+        <div className="request-copy">
+          <span className="section-kicker">Pide tu planta</span>
+          <h1 id="request-title">¿Buscas una planta especial?</h1>
+          <p>
+            Cuéntanos qué planta te gustaría encontrar en Terra Magic. Revisaremos tu
+            sugerencia y te contactaremos si podemos traerla al vivero.
+          </p>
+        </div>
+
+        <div className="request-form-panel">
+          <form className="checkout-form" onSubmit={handleSubmit}>
+            <label>
+              Nombre de la planta que buscas
+              <input
+                required
+                value={plantName}
+                onChange={(event) => setPlantName(event.target.value)}
+                placeholder="Ej: Calathea Orbifolia"
+              />
+            </label>
+
+            <label>
+              Nombre del cliente
+              <input
+                required
+                value={customerName}
+                onChange={(event) => setCustomerName(event.target.value)}
+                placeholder="Ej: Maria Gonzalez"
+              />
+            </label>
+
+            <label>
+              Telefono o Instagram de contacto
+              <input
+                required
+                value={contact}
+                onChange={(event) => setContact(event.target.value)}
+                placeholder="Ej: +56 9 1234 5678 o @usuario"
+              />
+            </label>
+
+            <label>
+              Comentario opcional
+              <textarea
+                value={comment}
+                onChange={(event) => setComment(event.target.value)}
+                placeholder="Ej: La busco para interior y en tamaño mediano"
+                rows={4}
+              />
+            </label>
+
+            {formError ? <p className="form-error">{formError}</p> : null}
+
+            <motion.button type="submit" whileTap={{ scale: 0.98 }}>
+              <MessageCircle size={18} />
+              Enviar sugerencia por WhatsApp
+            </motion.button>
+          </form>
+        </div>
       </section>
     </motion.main>
   );
